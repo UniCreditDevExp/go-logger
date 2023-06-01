@@ -37,7 +37,7 @@ func Init() error {
 	}
 	w := zerolog.MultiLevelWriter(output)
 
-	Log.logger = zerolog.New(w).Level(zerolog.Level(logLevel)).With().Timestamp().Caller().
+	Log.logger = zerolog.New(w).Level(zerolog.Level(logLevel)).With().Timestamp().
 		Int("pid", os.Getpid()).
 		Str("go_version", buildInfo.GoVersion).Logger()
 
