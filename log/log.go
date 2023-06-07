@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"github.com/csturiale/go-logger/db"
 	"github.com/rs/zerolog"
 	"os"
 	"runtime/debug"
@@ -15,9 +16,10 @@ type logger struct {
 	logExclusions []string
 }
 
-var Log logger
+var log logger
 
 func Init() error {
+	loadFiltersFromCache()
 	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 	output.FormatLevel = func(i interface{}) string {
 		return strings.ToUpper(fmt.Sprintf("| %-6s|", i))
@@ -25,7 +27,7 @@ func Init() error {
 	output.FormatMessage = func(i interface{}) string {
 
 		result := fmt.Sprintf("%s", i)
-		for _, e := range Log.logExclusions {
+		for _, e := range log.logExclusions {
 			result = strings.ReplaceAll(result, e, "[REDACTED]")
 		}
 		return result
@@ -37,48 +39,82 @@ func Init() error {
 	}
 	w := zerolog.MultiLevelWriter(output)
 
-	Log.logger = zerolog.New(w).Level(zerolog.Level(logLevel)).With().Timestamp().
+	log.logger = zerolog.New(w).Level(zerolog.Level(logLevel)).With().Timestamp().
 		Int("pid", os.Getpid()).
 		Str("go_version", buildInfo.GoVersion).Logger()
 
 	return nil
 }
 
-func (l *logger) Filter(s string) {
-	l.logExclusions = append(l.logExclusions, s)
+func loadFiltersFromCache() {
+	dbR := db.GetRedisClient()
+	if dbR != nil {
+		log.logExclusions = dbR.Client.LoadFilters()
+	}
+}
+
+func saveFilterToCache(msg string) {
+	dbR := db.GetRedisClient()
+	if dbR != nil {
+		dbR.Client.SaveFilter(msg)
+	}
+}
+
+func Filter(msg string) {
+	saveFilterToCache(msg)
+	log.logExclusions = append(log.logExclusions, msg)
 }
 
 // Debug logs a debug message.
 func Debug(msg string) {
-	Log.logger.Debug().Msg(msg)
+	log.logger.Debug().Msg(msg)
+}
+
+func Debugf(msg string) {
+	log.logger.Debug().Msgf(msg)
 }
 
 // Info logs an info message.
 func Info(msg string) {
-	Log.logger.Info().Msg(msg)
+	log.logger.Info().Msg(msg)
 }
 
 // Infof Info logs an info message.
 func Infof(format string, v ...interface{}) {
-	Log.logger.Info().Msgf(format, v...)
+	log.logger.Info().Msgf(format, v...)
 }
 
 // Warn logs a warning message.
 func Warn(msg string) {
-	Log.logger.Warn().Msg(msg)
+	log.logger.Warn().Msg(msg)
+}
+
+func Warnf(msg string) {
+	log.logger.Warn().Msgf(msg)
 }
 
 // Error logs an error message.
 func Error(msg string, err error) {
-	Log.logger.Err(err).Msg(msg)
+	log.logger.Err(err).Msg(msg)
+}
+
+func Errorf(msg string, err error) {
+	log.logger.Err(err).Msgf(msg)
 }
 
 // Fatal logs a fatal message and exits the program.
 func Fatal(msg string, err error) {
-	Log.logger.Fatal().Err(err).Msg(msg)
+	log.logger.Fatal().Err(err).Msg(msg)
+}
+func Fatalf(msg string, err error) {
+	log.logger.Fatal().Err(err).Msgf(msg)
 }
 
 // Panic logs a panic message and panics.
 func Panic(msg string, err error) {
-	Log.logger.Panic().Err(err).Msg(msg)
+	log.logger.Panic().Err(err).Msg(msg)
+}
+
+func Panicf(msg string, err error) {
+	log.logger.Panic().Err(err).Msgf(msg)
 }
