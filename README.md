@@ -11,7 +11,7 @@ if err != nil {
 
 // Hide sensible data
 pw := "myPW"
-log.Log.Filter(pwd)
+log.Filter(pwd)
 log.Info(pw) // Will produce [REDACTED]
 
 // INFO
@@ -43,7 +43,7 @@ log.Panicf("%s","message")
 
 ``` go
 pw := "myPW"
-log.Log.Filter(pwd)
+log.Filter(pwd)
 log.Info(pw) // Will produce [REDACTED]
 ```
 
