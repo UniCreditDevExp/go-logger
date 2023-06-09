@@ -39,7 +39,7 @@ log.Panic("message")
 log.Panicf("%s","message")
 ```
 
-# LOG Filters - Hide sensible data
+# LOG Filters - Hide sensitive data
 
 ``` go
 pw := "myPW"
